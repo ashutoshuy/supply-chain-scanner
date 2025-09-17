@@ -274,7 +274,7 @@ class SupplyChainScanner:
                     return [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
         logger.info("Using default Shai-Hulud compromised packages list")
-        return cls._get_default_packages()  # type: ignore
+        return cls._get_default_packages()
     
     @staticmethod
     def _get_default_packages() -> List[str]:
