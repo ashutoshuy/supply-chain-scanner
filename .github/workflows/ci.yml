@@ -83,7 +83,7 @@ jobs:
   docker:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
+    if: (github.event_name == 'release' || github.ref == 'refs/heads/main') && secrets.DOCKER_USERNAME != ''
     
     steps:
     - uses: actions/checkout@v3
