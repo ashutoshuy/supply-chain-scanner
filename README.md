@@ -341,50 +341,6 @@ Subscribe to security advisories:
 curl -s https://api.github.com/advisories | jq '.[] | select(.ecosystem=="npm") | .package.name' >> new_threats.txt
 ```
 
-## 🆘 Incident Response Workflow
-
-### Phase 1: Detection (0-1 hour)
-1. Run scanner with latest threat intelligence
-2. Generate reports in multiple formats
-3. Identify affected teams and projects
-4. Assess scope and potential impact
-
-### Phase 2: Containment (1-4 hours)  
-1. Stop CI/CD pipelines for affected projects
-2. Revoke and rotate all potentially compromised credentials
-3. Block malicious package versions at network level
-4. Communicate with affected teams
-
-### Phase 3: Eradication (4-24 hours)
-1. Downgrade packages to safe versions
-2. Scan systems for compromise indicators
-3. Review access logs for unauthorized activity
-4. Update security policies and controls
-
-### Phase 4: Recovery (1-7 days)
-1. Test applications with safe package versions
-2. Resume CI/CD operations with additional controls
-3. Monitor for reinfection or lateral movement
-4. Conduct lessons learned session
-
-## 📋 Compliance and Reporting
-
-### Regulatory Requirements
-- **SOX**: Document supply chain risk management
-- **PCI DSS**: Secure development lifecycle controls
-- **GDPR**: Data protection in development tools
-- **ISO 27001**: Information security management
-
-### Audit Reports
-Generate compliance-ready reports:
-```bash
-# Weekly compliance scan
-python scanner.py --provider gitlab --token $TOKEN --format json --output compliance_$(date +%Y_week_%U).json
-
-# Executive summary
-python reporter.py --input compliance_*.json --summary --format pdf
-```
-
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -427,30 +383,6 @@ response = self.session.get(url, timeout=60)
 python scanner.py --provider gitlab --token TOKEN --verbose 2>&1 | tee debug.log
 ```
 
-## 📊 Analytics and Metrics
-
-### Key Metrics to Track
-- Number of vulnerable projects over time
-- Mean time to remediation (MTTR)
-- Repeat violations by team
-- Coverage percentage of repositories
-- False positive rates
-
-### Dashboards
-Integrate with monitoring tools:
-- Grafana dashboards for trending
-- Splunk searches for log analysis  
-- ELK stack for centralized logging
-
-## 🌟 Success Stories
-
-> "This tool helped us identify 47 compromised packages across 200+ repositories in under 10 minutes during the Shai-Hulud incident. Without it, manual review would have taken days."
-> 
-> *- CISO, Fortune 500 Financial Services*
-
-> "We integrated the scanner into our CI/CD pipeline and prevented 12 supply chain compromises before they reached production."
->
-> *- Security Engineer, Tech Startup*
 
 ## 📞 Support
 
@@ -477,25 +409,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - Platform providers (GitHub, GitLab) for robust APIs
 - Organizations sharing threat intelligence
 
-## 🔮 Roadmap
-
-### v1.1 (Q4 2025)
-- Bitbucket support
-- Async scanning for better performance
-- Risk scoring algorithms
-- Integration with security orchestration platforms
-
-### v1.2 (Q1 2026)  
-- Python package scanning (PyPI)
-- Historical vulnerability tracking
-- Machine learning for anomaly detection
-- REST API server mode
-
-### v2.0 (Q2 2026)
-- Multi-language support (Go, Rust, Java)
-- Enterprise SSO integration
-- Advanced reporting and analytics
-- Real-time monitoring capabilities
 
 ---
 
