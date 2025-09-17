@@ -1,3 +1,8 @@
+---
+layout: default
+title: Documentation
+---
+
 # Complete Project Structure
 
 Here's the complete directory structure for the open-source Supply Chain Security Scanner:
