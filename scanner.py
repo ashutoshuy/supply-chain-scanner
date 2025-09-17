@@ -269,7 +269,8 @@ class SupplyChainScanner:
             with open(package_file, 'r') as f:
                 if package_file.endswith('.json'):
                     data = json.load(f)
-                    return data.get('packages', data) if isinstance(data, dict) else data
+                    packages = data.get('packages', data) if isinstance(data, dict) else data
+                    return list(packages) if packages else []
                 else:
                     return [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
