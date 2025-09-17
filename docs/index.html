@@ -3,121 +3,431 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supply Chain Security Scanner</title>
+    <title>Supply Chain Security Scanner - Documentation</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .feature-icon { font-size: 3rem; color: #667eea; }
-        .code-block { background: #f8f9fa; border-left: 4px solid #667eea; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: #2c3e50;
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 8px 20px;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: #34495e;
+            color: white;
+        }
+        .sidebar .nav-link.sub-item {
+            padding-left: 40px;
+            font-size: 0.9rem;
+        }
+        .main-content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 3rem;
+            padding-top: 20px;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .feature-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: box-shadow 0.3s;
+        }
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .brand {
+            padding: 20px;
+            background: #34495e;
+            border-bottom: 1px solid #4a5f7a;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="#"><strong>Supply Chain Scanner</strong></a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="https://github.com/security-community/supply-chain-scanner">GitHub</a>
-                <a class="nav-link" href="#docs">Documentation</a>
-                <a class="nav-link" href="#examples">Examples</a>
-            </div>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="brand">
+            <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Supply Chain Scanner</h5>
+            <small class="text-muted">Documentation</small>
         </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="#overview"><i class="fas fa-home"></i> Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#installation"><i class="fas fa-download"></i> Installation</a>
+                <a class="nav-link sub-item" href="#quick-install">Quick Install</a>
+                <a class="nav-link sub-item" href="#from-source">From Source</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#usage"><i class="fas fa-play"></i> Usage</a>
+                <a class="nav-link sub-item" href="#basic-usage">Basic Usage</a>
+                <a class="nav-link sub-item" href="#advanced-options">Advanced Options</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#features"><i class="fas fa-star"></i> Features</a>
+                <a class="nav-link sub-item" href="#multi-platform">Multi-Platform</a>
+                <a class="nav-link sub-item" href="#configuration">Configuration</a>
+                <a class="nav-link sub-item" href="#security">Security</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#integration"><i class="fas fa-plug"></i> Integration</a>
+                <a class="nav-link sub-item" href="#gitlab-ci">GitLab CI</a>
+                <a class="nav-link sub-item" href="#github-actions">GitHub Actions</a>
+                <a class="nav-link sub-item" href="#docker">Docker</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#customization"><i class="fas fa-cog"></i> Customization</a>
+                <a class="nav-link sub-item" href="#package-lists">Package Lists</a>
+                <a class="nav-link sub-item" href="#environment">Environment</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#deployment"><i class="fas fa-rocket"></i> Deployment</a>
+                <a class="nav-link sub-item" href="#incident-response">Incident Response</a>
+                <a class="nav-link sub-item" href="#monitoring">Monitoring</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#development"><i class="fas fa-code"></i> Development</a>
+                <a class="nav-link sub-item" href="#project-structure">Project Structure</a>
+                <a class="nav-link sub-item" href="#commands">Commands</a>
+            </li>
+        </ul>
     </nav>
 
-    <section class="hero py-5">
-        <div class="container text-center">
-            <h1 class="display-4 fw-bold mb-4">Supply Chain Security Scanner</h1>
-            <p class="lead mb-4">Detect compromised NPM packages in your Git repositories across GitHub, GitLab, and more</p>
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <div class="code-block p-3 rounded text-start">
-                        <code class="text-dark">pip install supply-chain-scanner</code>
+    <!-- Main Content -->
+    <div class="main-content">
+        <section id="overview" class="section">
+            <h1><i class="fas fa-shield-alt text-primary"></i> Supply Chain Security Scanner</h1>
+            <p class="lead">A comprehensive security tool to detect compromised NPM packages in your Git repositories across multiple platforms.</p>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                        <h5>Multi-Platform Detection</h5>
+                        <p>Scan repositories across GitHub, GitLab, and more platforms</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
+                        <h5>Fast & Efficient</h5>
+                        <p>Quickly identify compromised packages like the Shai-Hulud attack</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class="fas fa-file-export fa-3x text-success mb-3"></i>
+                        <h5>Multiple Formats</h5>
+                        <p>Export results in CSV, JSON, or YAML formats</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="py-5">
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-md-4 mb-4">
-                    <div class="feature-icon">🔍</div>
-                    <h4>Multi-Platform</h4>
-                    <p>Scan repositories across GitHub, GitLab, and Bitbucket</p>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="feature-icon">⚡</div>
-                    <h4>Fast Detection</h4>
-                    <p>Quickly identify compromised packages like the Shai-Hulud attack</p>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="feature-icon">📊</div>
-                    <h4>Multiple Formats</h4>
-                    <p>Export results in CSV, JSON, or YAML formats</p>
-                </div>
+        <section id="installation" class="section">
+            <h2><i class="fas fa-download text-primary"></i> Installation</h2>
+            
+            <h3 id="quick-install">Quick Install</h3>
+            <div class="code-block">
+                <code>pip install supply-chain-scanner</code>
             </div>
-        </div>
-    </section>
+            
+            <h3 id="from-source">From Source</h3>
+            <pre><code class="language-bash"># Clone repository
+git clone https://github.com/ashutoshuy/supply-chain-scanner.git
+cd supply-chain-scanner
 
-    <section id="docs" class="py-5 bg-light">
-        <div class="container">
-            <h2 class="text-center mb-5">Quick Start</h2>
+# Install dependencies
+make install
+
+# Or manual install
+pip install -r requirements.txt</code></pre>
+        </section>
+
+        <section id="usage" class="section">
+            <h2><i class="fas fa-play text-primary"></i> Usage</h2>
+            
+            <h3 id="basic-usage">Basic Usage</h3>
             <div class="row">
                 <div class="col-md-6">
-                    <h4>GitLab Scanning</h4>
-                    <pre><code class="language-bash">supply-chain-scanner \
-  --provider gitlab \
-  --token glpat-xxx \
-  --format json</code></pre>
+                    <h5>GitLab Scanning</h5>
+                    <pre><code class="language-bash">python scanner.py --provider gitlab --token YOUR_TOKEN</code></pre>
                 </div>
                 <div class="col-md-6">
-                    <h4>GitHub Scanning</h4>
-                    <pre><code class="language-bash">supply-chain-scanner \
-  --provider github \
-  --token ghp-xxx \
-  --format csv</code></pre>
+                    <h5>GitHub Scanning</h5>
+                    <pre><code class="language-bash">python scanner.py --provider github --token YOUR_TOKEN</code></pre>
                 </div>
             </div>
-        </div>
-    </section>
+            
+            <h3 id="advanced-options">Advanced Options</h3>
+            <pre><code class="language-bash"># Use custom package list
+python scanner.py --provider gitlab --token TOKEN --packages compromised_packages.txt
 
-    <section id="examples" class="py-5">
-        <div class="container">
-            <h2 class="text-center mb-5">Integration Examples</h2>
+# Output as JSON
+python scanner.py --provider github --token TOKEN --format json --output results.json
+
+# Verbose logging
+python scanner.py --provider gitlab --token TOKEN --verbose</code></pre>
+        </section>
+
+        <section id="features" class="section">
+            <h2><i class="fas fa-star text-primary"></i> Features</h2>
+            
+            <h3 id="multi-platform">Multi-Platform Support</h3>
             <div class="row">
-                <div class="col-md-6 mb-4">
-                    <h4>GitHub Actions</h4>
-                    <pre><code class="language-yaml">- name: Supply Chain Scan
-  run: |
-    supply-chain-scanner \
-      --provider github \
-      --token ${{ secrets.GITHUB_TOKEN }}</code></pre>
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <h5><i class="fab fa-gitlab text-orange"></i> GitLab</h5>
+                        <ul>
+                            <li>Self-hosted and GitLab.com</li>
+                            <li>API token authentication</li>
+                            <li>Recursive repository scanning</li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="col-md-6 mb-4">
-                    <h4>GitLab CI</h4>
-                    <pre><code class="language-yaml">security_scan:
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <h5><i class="fab fa-github"></i> GitHub</h5>
+                        <ul>
+                            <li>GitHub.com and Enterprise</li>
+                            <li>Personal access tokens</li>
+                            <li>Organization repositories</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 id="configuration">Flexible Configuration</h3>
+            <ul>
+                <li>External package lists (TXT, JSON)</li>
+                <li>Multiple output formats (CSV, JSON, YAML)</li>
+                <li>Configurable scanning scope</li>
+                <li>Custom risk levels</li>
+            </ul>
+            
+            <h3 id="security">Security Focused</h3>
+            <ul>
+                <li>Token-based authentication</li>
+                <li>Minimal data collection</li>
+                <li>HTTPS-only communications</li>
+                <li>No credential storage</li>
+                <li>Audit trail support</li>
+            </ul>
+        </section>
+
+        <section id="integration" class="section">
+            <h2><i class="fas fa-plug text-primary"></i> Integration</h2>
+            
+            <h3 id="gitlab-ci">GitLab CI</h3>
+            <pre><code class="language-yaml">security_scan:
+  stage: security
+  image: python:3.9-slim
+  before_script:
+    - pip install supply-chain-scanner
   script:
-    - supply-chain-scanner 
-        --provider gitlab 
-        --token $GITLAB_TOKEN</code></pre>
+    - python -m scanner --provider gitlab --token $GITLAB_TOKEN --format json
+    - if [ -s results.json ]; then exit 1; fi
+  artifacts:
+    reports:
+      junit: results.json</code></pre>
+            
+            <h3 id="github-actions">GitHub Actions</h3>
+            <pre><code class="language-yaml">- name: Supply Chain Scan
+  run: |
+    python -m scanner --provider github --token ${{ secrets.GITHUB_TOKEN }} --format json
+    if [ -s results.json ]; then exit 1; fi</code></pre>
+            
+            <h3 id="docker">Docker Deployment</h3>
+            <pre><code class="language-bash"># Run with environment variables
+docker run -e GITLAB_TOKEN=$TOKEN securitycommunity/supply-chain-scanner:latest \
+  --provider gitlab --format json --output /app/results.json
+
+# Mount volume for results
+docker run -v $(pwd):/output securitycommunity/supply-chain-scanner:latest \
+  --provider github --token $GITHUB_TOKEN --output /output/scan.csv</code></pre>
+        </section>
+
+        <section id="customization" class="section">
+            <h2><i class="fas fa-cog text-primary"></i> Customization</h2>
+            
+            <h3 id="package-lists">Custom Package Lists</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Simple Text Format</h5>
+                    <pre><code>@ctrl/tinycolor
+ngx-toastr
+lodash</code></pre>
+                </div>
+                <div class="col-md-6">
+                    <h5>Detailed JSON Format</h5>
+                    <pre><code class="language-json">{
+  "threat_name": "Custom Threat",
+  "packages": ["package1", "package2"],
+  "metadata": {
+    "severity": "HIGH",
+    "discovery_date": "2025-09-17"
+  }
+}</code></pre>
                 </div>
             </div>
-        </div>
-    </section>
+            
+            <h3 id="environment">Environment Configuration</h3>
+            <pre><code class="language-bash"># Set tokens via environment
+export GITLAB_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+export GITHUB_TOKEN="ghp-xxxxxxxxxxxxxxxxxxxx"
 
-    <footer class="bg-dark text-white py-4">
-        <div class="container text-center">
-            <p>&copy; 2025 Security Community. Licensed under MIT License.</p>
-            <p>
-                <a href="https://github.com/security-community/supply-chain-scanner" class="text-white">GitHub</a> |
-                <a href="https://pypi.org/project/supply-chain-scanner/" class="text-white">PyPI</a> |
-                <a href="https://github.com/security-community/supply-chain-scanner/issues" class="text-white">Issues</a>
-            </p>
-        </div>
-    </footer>
+# Run without specifying token
+python scanner.py --provider gitlab --format json</code></pre>
+        </section>
 
+        <section id="deployment" class="section">
+            <h2><i class="fas fa-rocket text-primary"></i> Deployment Scenarios</h2>
+            
+            <h3 id="incident-response">Incident Response</h3>
+            <pre><code class="language-bash">#!/bin/bash
+# Emergency scan across all platforms
+python scanner.py --provider gitlab --token $GITLAB_TOKEN --format json --output gitlab-$(date +%Y%m%d).json &
+python scanner.py --provider github --token $GITHUB_TOKEN --format json --output github-$(date +%Y%m%d).json &
+wait
+echo "Emergency scan completed"</code></pre>
+            
+            <h3 id="monitoring">Scheduled Monitoring</h3>
+            <pre><code class="language-bash"># Cron job for daily scans
+0 2 * * * cd /opt/scanner && python scanner.py --provider gitlab --token $GITLAB_TOKEN --output /var/log/daily-scan.csv</code></pre>
+        </section>
+
+        <section id="development" class="section">
+            <h2><i class="fas fa-code text-primary"></i> Development</h2>
+            
+            <h3 id="project-structure">Project Structure</h3>
+            <pre><code>supply-chain-scanner/
+├── scanner.py                     # Main scanner application
+├── README.md                      # Comprehensive documentation
+├── LICENSE                        # MIT license
+├── setup.py                      # Package configuration
+├── requirements.txt              # Runtime dependencies
+├── requirements-dev.txt          # Development dependencies
+├── Makefile                      # Build and development commands
+├── Dockerfile                    # Container configuration
+├── compromised_packages.txt      # Default package list
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI/CD pipeline
+├── config/
+│   └── packages.json            # Example JSON configuration
+├── tests/
+│   └── test_scanner.py          # Unit tests
+├── examples/
+│   ├── gitlab-ci.yml            # GitLab CI integration
+│   ├── github-actions.yml       # GitHub Actions workflow
+│   └── docker-compose.yml       # Docker deployment
+└── CONTRIBUTING.md              # Contribution guidelines</code></pre>
+            
+            <h3 id="commands">Development Commands</h3>
+            <pre><code class="language-bash"># Run tests
+make test
+
+# Format code
+make format
+
+# Run linting
+make lint
+
+# Build package
+make build
+
+# Build Docker image
+make docker</code></pre>
+        </section>
+
+        <footer class="mt-5 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 Security Community. Licensed under MIT License.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="https://github.com/ashutoshuy/supply-chain-scanner" class="me-3"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="https://pypi.org/project/supply-chain-scanner/" class="me-3"><i class="fab fa-python"></i> PyPI</a>
+                    <a href="https://github.com/ashutoshuy/supply-chain-scanner/issues"><i class="fas fa-bug"></i> Issues</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('.nav-link[href^="#"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active link
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        // Update active link on scroll
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= (sectionTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
