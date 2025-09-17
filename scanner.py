@@ -15,7 +15,7 @@ import argparse
 import sys
 import os
 from datetime import datetime
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Any
 from pathlib import Path
 import urllib.parse
 import logging
@@ -85,7 +85,7 @@ class GitLabProvider(GitProvider):
         logger.info("Fetching GitLab projects...")
         while True:
             url = f"{self.base_url}/api/v4/projects"
-            params = {
+            params: Dict[str, Union[str, int]] = {
                 'membership': 'true',
                 'per_page': per_page,
                 'page': page,
@@ -114,7 +114,7 @@ class GitLabProvider(GitProvider):
     def get_package_files(self, project_id: Union[str, int]) -> List[str]:
         try:
             url = f"{self.base_url}/api/v4/projects/{project_id}/repository/tree"
-            params = {'recursive': 'true', 'per_page': 100}
+            params: Dict[str, Union[str, int]] = {'recursive': 'true', 'per_page': 100}
             
             response = self.session.get(url, params=params, timeout=30)
             if response.status_code == 404:
@@ -135,11 +135,11 @@ class GitLabProvider(GitProvider):
         for ref in ['main', 'master', 'develop']:
             try:
                 url = f"{self.base_url}/api/v4/projects/{project_id}/repository/files/{encoded_path}/raw"
-                params = {'ref': ref}
+                params: Dict[str, str] = {'ref': ref}
                 
                 response = self.session.get(url, params=params, timeout=30)
                 if response.status_code == 200:
-                    return json.loads(response.text)
+                    return json.loads(response.text)  # type: ignore
             except (requests.RequestException, json.JSONDecodeError):
                 continue
         
@@ -162,7 +162,7 @@ class GitHubProvider(GitProvider):
         logger.info("Fetching GitHub repositories...")
         while True:
             url = f"{self.base_url}/user/repos"
-            params = {
+            params: Dict[str, Union[str, int]] = {
                 'per_page': per_page,
                 'page': page,
                 'type': 'all',
@@ -204,7 +204,7 @@ class GitHubProvider(GitProvider):
             repo_info = repo_response.json()
             
             url = f"{self.base_url}/repos/{repo_info['full_name']}/git/trees/{repo_info['default_branch']}"
-            params = {'recursive': '1'}
+            params: Dict[str, str] = {'recursive': '1'}
             
             response = self.session.get(url, params=params, timeout=30)
             if response.status_code == 404:
@@ -234,7 +234,7 @@ class GitHubProvider(GitProvider):
                 if content_info['encoding'] == 'base64':
                     import base64
                     content = base64.b64decode(content_info['content']).decode('utf-8')
-                    return json.loads(content)
+                    return json.loads(content)  # type: ignore
             
         except (requests.RequestException, json.JSONDecodeError, KeyError):
             pass
@@ -274,7 +274,7 @@ class SupplyChainScanner:
                     return [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
         logger.info("Using default Shai-Hulud compromised packages list")
-        return cls._get_default_packages()
+        return cls._get_default_packages()  # type: ignore
     
     @staticmethod
     def _get_default_packages() -> List[str]:
@@ -474,7 +474,7 @@ Examples:
             print(f"\n⚠️  WARNING: {len(vulnerabilities)} compromised packages found!")
             
             # Show summary by project
-            project_counts = {}
+            project_counts: Dict[str, int] = {}
             for vuln in vulnerabilities:
                 project_counts[vuln.project] = project_counts.get(vuln.project, 0) + 1
             
