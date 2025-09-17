@@ -1,0 +1,136 @@
+# Shai-Hulud Supply Chain Attack - Compromised NPM Packages
+# Attack Window: September 14-16, 2025
+# Source: ThreatMon Advisory 2025-09-17
+#
+# This file contains a list of NPM packages compromised during the
+# Shai-Hulud worm attack. Use this file with the supply chain scanner:
+# python scanner.py --provider gitlab --token TOKEN --packages compromised_packages.txt
+
+# High-impact packages (millions of downloads)
+@ctrl/tinycolor
+ngx-bootstrap
+ngx-toastr
+angulartics2
+
+# @ahmedhfarag packages
+@ahmedhfarag/ngx-perfect-scrollbar
+@ahmedhfarag/ngx-virtual-scroller
+
+# @art-ws packages
+@art-ws/common
+@art-ws/config-eslint
+@art-ws/config-ts
+@art-ws/db-context
+@art-ws/di
+@art-ws/di-node
+@art-ws/eslint
+@art-ws/fastify-http-server
+@art-ws/http-server
+@art-ws/openapi
+@art-ws/package-base
+@art-ws/prettier
+@art-ws/slf
+@art-ws/ssl-info
+@art-ws/web-app
+
+# @crowdstrike packages
+@crowdstrike/commitlint
+@crowdstrike/falcon-shoelace
+@crowdstrike/foundry-js
+@crowdstrike/glide-core
+@crowdstrike/logscale-dashboard
+@crowdstrike/logscale-file-editor
+@crowdstrike/logscale-parser-edit
+@crowdstrike/logscale-search
+@crowdstrike/tailwind-toucan-base
+
+# @ctrl packages
+@ctrl/deluge
+@ctrl/golang-template
+@ctrl/magnet-link
+@ctrl/ngx-codemirror
+@ctrl/ngx-csv
+@ctrl/ngx-emoji-mart
+@ctrl/ngx-rightclick
+@ctrl/qbittorrent
+@ctrl/react-adsense
+@ctrl/shared-torrent
+@ctrl/torrent-file
+@ctrl/transmission
+@ctrl/ts-base32
+
+# Development tools
+browser-webdriver-downloader
+capacitor-notificationhandler
+capacitor-plugin-healthapp
+capacitor-plugin-ihealth
+capacitor-plugin-vonage
+capacitorandroidpermissions
+config-cordova
+cordova-plugin-voxeet2
+cordova-voxeet
+create-hest-app
+db-evo
+devextreme-angular-rpk
+
+# Ember.js packages
+ember-browser-services
+ember-headless-form
+ember-headless-form-yup
+ember-headless-table
+ember-url-hash-polyfill
+ember-velcro
+encounter-playground
+
+# ESLint configurations
+eslint-config-crowdstrike
+eslint-config-crowdstrike-node
+eslint-config-teselagen
+
+# Various utility packages
+globalize-rpk
+graphql-sequelize-teselagen
+html-to-base64-image
+json-rules-engine-simplified
+jumpgate
+koa2-swagger-ui
+mcfly-semantic-release
+mcp-knowledge-base
+mcp-knowledge-graph
+mobioffice-cli
+monorepo-next
+ng2-file-upload
+ngx-color
+ngx-trend
+ngx-ws
+pm2-gelf-json
+printjs-rpk
+
+# React packages
+react-complaint-image
+react-jsonschema-form-conditionals
+remark-preset-lint-crowdstrike
+
+# Healthcare/RX packages
+rxnt-authentication
+rxnt-healthchecks-nestjs
+rxnt-kue
+
+# Additional packages
+swc-plugin-component-annotate
+tbssnch
+teselagen-interval-tree
+tg-client-query-builder
+tg-redbird
+tg-seq-gen
+thangved-react-grid
+ts-gaussian
+ts-imports
+tvi-cli
+ve-bamreader
+ve-editor
+verror-extra
+voip-callkit
+wdio-web-reporter
+yargs-help-output
+yoo-styles

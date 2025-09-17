@@ -1,0 +1,72 @@
+{
+  "attack_info": {
+    "name": "Shai-Hulud",
+    "date_range": "2025-09-14 to 2025-09-16",
+    "description": "Worm-like malware targeting NPM packages to steal developer credentials",
+    "impact": "Credential theft, repository compromise, supply chain contamination",
+    "source": "ThreatMon Advisory 2025-09-17"
+  },
+  "packages": [
+    {
+      "name": "@ctrl/tinycolor",
+      "affected_versions": "4.1.1-4.1.2",
+      "downloads_monthly": "8000000+",
+      "risk_level": "CRITICAL"
+    },
+    {
+      "name": "ngx-toastr",
+      "affected_versions": "19.0.1-19.0.2",
+      "downloads_monthly": "1000000+",
+      "risk_level": "CRITICAL"
+    },
+    {
+      "name": "angulartics2",
+      "affected_versions": "14.1.1-14.1.2",
+      "downloads_monthly": "500000+",
+      "risk_level": "CRITICAL"
+    },
+    {
+      "name": "@crowdstrike/foundry-js",
+      "affected_versions": "0.19.1-0.19.2",
+      "downloads_monthly": "10000+",
+      "risk_level": "HIGH"
+    }
+  ],
+  "indicators_of_compromise": {
+    "files": [
+      "data.json (base64 encoded)",
+      "bundle.js (3.7MB minified)"
+    ],
+    "repositories": [
+      "Repositories with '-migration' suffix",
+      "Unexpected 'ShaiHulud' repositories"
+    ],
+    "network": [
+      "webhook.site/bb8ca5f6-4175-45d2-b042-fc9ebb8170b7"
+    ],
+    "tools_used": [
+      "TruffleHog for credential scanning",
+      "Webpack for code bundling"
+    ]
+  },
+  "remediation": {
+    "immediate": [
+      "Stop all CI/CD deployments",
+      "Revoke and rotate all API tokens",
+      "Downgrade affected packages",
+      "Scan for compromise indicators"
+    ],
+    "investigation": [
+      "Check NPM logs for postinstall execution",
+      "Review repository visibility changes",
+      "Monitor for data exfiltration",
+      "Audit CI/CD secrets and variables"
+    ],
+    "prevention": [
+      "Implement package scanning in CI/CD",
+      "Use private NPM registries",
+      "Monitor postinstall script execution",
+      "Regular security audits"
+    ]
+  }
+}
