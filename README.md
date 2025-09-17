@@ -83,7 +83,7 @@ When a supply chain attack is announced:
 ## 📦 Installation
 
 ### Prerequisites
-- Python 3.7+
+- Python 3.8+
 - Git platform API token (GitHub/GitLab)
 
 ### Install Dependencies

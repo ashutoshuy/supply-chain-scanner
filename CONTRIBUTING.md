@@ -32,7 +32,7 @@ Thank you for your interest in contributing to this project! Your contributions 
 ## Development Setup
 
 ### Prerequisites
-- Python 3.7+
+- Python 3.8+
 - Git
 - GitHub or GitLab account for testing
 
