@@ -55,7 +55,7 @@ class GitProvider:
         self.session = requests.Session()
         self._setup_auth()
     
-    def _setup_auth(self):
+    def _setup_auth(self) -> None:
         """Setup authentication headers"""
         raise NotImplementedError
     
@@ -74,7 +74,7 @@ class GitProvider:
 class GitLabProvider(GitProvider):
     """GitLab API provider"""
     
-    def _setup_auth(self):
+    def _setup_auth(self) -> None:
         self.session.headers.update({'PRIVATE-TOKEN': self.token})
     
     def get_projects(self) -> List[Dict]:
@@ -148,7 +148,7 @@ class GitLabProvider(GitProvider):
 class GitHubProvider(GitProvider):
     """GitHub API provider"""
     
-    def _setup_auth(self):
+    def _setup_auth(self) -> None:
         self.session.headers.update({
             'Authorization': f'token {self.token}',
             'Accept': 'application/vnd.github.v3+json'
@@ -366,7 +366,7 @@ class SupplyChainScanner:
         return all_vulnerabilities
     
     def export_results(self, vulnerabilities: List[Vulnerability], 
-                      output_file: str, format_type: str = 'csv'):
+                      output_file: str, format_type: str = 'csv') -> None:
         """Export results in specified format"""
         if not vulnerabilities:
             logger.info("No vulnerabilities found to export")
@@ -406,7 +406,7 @@ class SupplyChainScanner:
         
         logger.info(f"Results exported to {output_file}")
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Supply Chain Security Scanner - Detect compromised NPM packages',
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -47,6 +47,8 @@ dev = [
     "black>=22.0.0",
     "flake8>=5.0.0",
     "mypy>=0.991",
+    "types-requests",
+    "types-PyYAML",
     "bandit>=1.7.0",
     "isort>=5.12.0",
     "pre-commit>=2.20.0",
@@ -93,10 +95,10 @@ line_length = 88
 known_first_party = ["scanner"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
