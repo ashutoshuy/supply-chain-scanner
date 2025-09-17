@@ -57,11 +57,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/security-community/supply-chain-scanner"
-Documentation = "https://github.com/security-community/supply-chain-scanner/wiki"
-Repository = "https://github.com/security-community/supply-chain-scanner.git"
-"Bug Reports" = "https://github.com/security-community/supply-chain-scanner/issues"
-Changelog = "https://github.com/security-community/supply-chain-scanner/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/ashutoshuy/supply-chain-scanner"
+Documentation = "https://github.com/ashutoshuy/supply-chain-scanner/wiki"
+Repository = "https://github.com/ashutoshuy/supply-chain-scanner.git"
+"Bug Reports" = "https://github.com/ashutoshuy/supply-chain-scanner/issues"
+Changelog = "https://github.com/ashutoshuy/supply-chain-scanner/blob/main/CHANGELOG.md"
 
 [project.scripts]
 supply-chain-scanner = "scanner:main"

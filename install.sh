@@ -38,6 +38,6 @@ else
 fi
 
 echo ""
-echo "📚 Documentation: https://github.com/security-community/supply-chain-scanner"
-echo "🐛 Issues: https://github.com/security-community/supply-chain-scanner/issues"
-echo "💬 Discussions: https://github.com/security-community/supply-chain-scanner/discussions"
+echo "📚 Documentation: https://github.com/ashutoshuy/supply-chain-scanner"
+echo "🐛 Issues: https://github.com/ashutoshuy/supply-chain-scanner/issues"
+echo "💬 Discussions: https://github.com/ashutoshuy/supply-chain-scanner/discussions"

@@ -93,7 +93,7 @@ pip install requests pyyaml
 
 ### Download
 ```bash
-git clone https://github.com/security-community/supply-chain-scanner.git
+git clone https://github.com/ashutoshuy/supply-chain-scanner.git
 cd supply-chain-scanner
 ```
 

@@ -16,11 +16,11 @@ setup(
     description="A comprehensive security tool to detect compromised NPM packages in Git repositories",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/security-community/supply-chain-scanner",
+    url="https://github.com/ashutoshuy/supply-chain-scanner",
     project_urls={
-        "Bug Reports": "https://github.com/security-community/supply-chain-scanner/issues",
-        "Source": "https://github.com/security-community/supply-chain-scanner",
-        "Documentation": "https://github.com/security-community/supply-chain-scanner/wiki",
+        "Bug Reports": "https://github.com/ashutoshuy/supply-chain-scanner/issues",
+        "Source": "https://github.com/ashutoshuy/supply-chain-scanner",
+        "Documentation": "https://github.com/ashutoshuy/supply-chain-scanner/wiki",
     },
     packages=find_packages(),
     classifiers=[
