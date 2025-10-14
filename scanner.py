@@ -39,6 +39,7 @@ class Vulnerability:
     file_path: str
     dependency_type: str
     risk_level: str
+    branch: str = ""
     repository_url: str = ""
     scan_timestamp: str = ""
     
@@ -63,12 +64,16 @@ class GitProvider:
         """Get all accessible projects"""
         raise NotImplementedError
     
-    def get_package_files(self, project_id: Union[str, int]) -> List[str]:
-        """Get package.json files in project"""
+    def get_branches(self, project_id: Union[str, int]) -> List[str]:
+        """Get all branches for a project"""
         raise NotImplementedError
     
-    def get_file_content(self, project_id: Union[str, int], file_path: str) -> Optional[Dict]:
-        """Get content of package.json file"""
+    def get_package_files(self, project_id: Union[str, int], branch: str) -> List[str]:
+        """Get package.json files in project branch"""
+        raise NotImplementedError
+    
+    def get_file_content(self, project_id: Union[str, int], file_path: str, branch: str) -> Optional[Dict]:
+        """Get content of package.json file from specific branch"""
         raise NotImplementedError
 
 class GitLabProvider(GitProvider):
@@ -111,10 +116,22 @@ class GitLabProvider(GitProvider):
         logger.info(f"Total projects found: {len(projects)}")
         return projects
     
-    def get_package_files(self, project_id: Union[str, int]) -> List[str]:
+    def get_branches(self, project_id: Union[str, int]) -> List[str]:
+        try:
+            url = f"{self.base_url}/api/v4/projects/{project_id}/repository/branches"
+            response = self.session.get(url, timeout=30)
+            if response.status_code == 404:
+                return []
+            response.raise_for_status()
+            branches = response.json()
+            return [branch['name'] for branch in branches]
+        except requests.RequestException:
+            return []
+    
+    def get_package_files(self, project_id: Union[str, int], branch: str) -> List[str]:
         try:
             url = f"{self.base_url}/api/v4/projects/{project_id}/repository/tree"
-            params: Dict[str, Union[str, int]] = {'recursive': 'true', 'per_page': 100}
+            params: Dict[str, Union[str, int]] = {'recursive': 'true', 'per_page': 100, 'ref': branch}
             
             response = self.session.get(url, params=params, timeout=30)
             if response.status_code == 404:
@@ -129,19 +146,18 @@ class GitLabProvider(GitProvider):
         except requests.RequestException:
             return []
     
-    def get_file_content(self, project_id: Union[str, int], file_path: str) -> Optional[Dict]:
+    def get_file_content(self, project_id: Union[str, int], file_path: str, branch: str) -> Optional[Dict]:
         encoded_path = urllib.parse.quote(file_path, safe='')
         
-        for ref in ['main', 'master', 'develop']:
-            try:
-                url = f"{self.base_url}/api/v4/projects/{project_id}/repository/files/{encoded_path}/raw"
-                params: Dict[str, str] = {'ref': ref}
-                
-                response = self.session.get(url, params=params, timeout=30)
-                if response.status_code == 200:
-                    return json.loads(response.text)  # type: ignore
-            except (requests.RequestException, json.JSONDecodeError):
-                continue
+        try:
+            url = f"{self.base_url}/api/v4/projects/{project_id}/repository/files/{encoded_path}/raw"
+            params: Dict[str, str] = {'ref': branch}
+            
+            response = self.session.get(url, params=params, timeout=30)
+            if response.status_code == 200:
+                return json.loads(response.text)
+        except (requests.RequestException, json.JSONDecodeError):
+            pass
         
         return None
 
@@ -196,14 +212,29 @@ class GitHubProvider(GitProvider):
         logger.info(f"Total repositories found: {len(projects)}")
         return projects
     
-    def get_package_files(self, project_id: Union[str, int]) -> List[str]:
-        # Get repository info first
+    def get_branches(self, project_id: Union[str, int]) -> List[str]:
         try:
             repo_response = self.session.get(f"{self.base_url}/repositories/{project_id}")
             repo_response.raise_for_status()
             repo_info = repo_response.json()
             
-            url = f"{self.base_url}/repos/{repo_info['full_name']}/git/trees/{repo_info['default_branch']}"
+            url = f"{self.base_url}/repos/{repo_info['full_name']}/branches"
+            response = self.session.get(url, timeout=30)
+            if response.status_code == 404:
+                return []
+            response.raise_for_status()
+            branches = response.json()
+            return [branch['name'] for branch in branches]
+        except requests.RequestException:
+            return []
+    
+    def get_package_files(self, project_id: Union[str, int], branch: str) -> List[str]:
+        try:
+            repo_response = self.session.get(f"{self.base_url}/repositories/{project_id}")
+            repo_response.raise_for_status()
+            repo_info = repo_response.json()
+            
+            url = f"{self.base_url}/repos/{repo_info['full_name']}/git/trees/{branch}"
             params: Dict[str, str] = {'recursive': '1'}
             
             response = self.session.get(url, params=params, timeout=30)
@@ -219,22 +250,22 @@ class GitHubProvider(GitProvider):
         except requests.RequestException:
             return []
     
-    def get_file_content(self, project_id: Union[str, int], file_path: str) -> Optional[Dict]:
+    def get_file_content(self, project_id: Union[str, int], file_path: str, branch: str) -> Optional[Dict]:
         try:
-            # Get repository info
             repo_response = self.session.get(f"{self.base_url}/repositories/{project_id}")
             repo_response.raise_for_status()
             repo_info = repo_response.json()
             
             url = f"{self.base_url}/repos/{repo_info['full_name']}/contents/{file_path}"
+            params = {'ref': branch}
             
-            response = self.session.get(url, timeout=30)
+            response = self.session.get(url, params=params, timeout=30)
             if response.status_code == 200:
                 content_info = response.json()
                 if content_info['encoding'] == 'base64':
                     import base64
                     content = base64.b64decode(content_info['content']).decode('utf-8')
-                    return json.loads(content)  # type: ignore
+                    return json.loads(content)
             
         except (requests.RequestException, json.JSONDecodeError, KeyError):
             pass
@@ -314,38 +345,44 @@ class SupplyChainScanner:
         ]
     
     def scan_project(self, project: Dict) -> List[Vulnerability]:
-        """Scan a single project for compromised packages"""
+        """Scan a single project for compromised packages across all branches"""
         vulnerabilities = []
         project_name = project['path_with_namespace']
         project_id = project['id']
         
         logger.info(f"Scanning: {project_name}")
         
-        package_files = self.provider.get_package_files(project_id)
+        branches = self.provider.get_branches(project_id)
+        if not branches:
+            return vulnerabilities
         
-        for file_path in package_files:
-            package_json = self.provider.get_file_content(project_id, file_path)
-            if not package_json:
-                continue
+        for branch in branches:
+            package_files = self.provider.get_package_files(project_id, branch)
             
-            # Check dependencies and devDependencies
-            for dep_type in ['dependencies', 'devDependencies']:
-                deps = package_json.get(dep_type, {})
+            for file_path in package_files:
+                package_json = self.provider.get_file_content(project_id, file_path, branch)
+                if not package_json:
+                    continue
                 
-                for package_name, version in deps.items():
-                    if package_name in self.compromised_packages:
-                        vuln = Vulnerability(
-                            project=project_name,
-                            project_id=project_id,
-                            package=package_name,
-                            version=version,
-                            file_path=file_path,
-                            dependency_type=dep_type,
-                            risk_level='CRITICAL',
-                            repository_url=project.get('web_url', '')
-                        )
-                        vulnerabilities.append(vuln)
-                        logger.warning(f"Found: {package_name}@{version} in {file_path}")
+                # Check dependencies and devDependencies
+                for dep_type in ['dependencies', 'devDependencies']:
+                    deps = package_json.get(dep_type, {})
+                    
+                    for package_name, version in deps.items():
+                        if package_name in self.compromised_packages:
+                            vuln = Vulnerability(
+                                project=project_name,
+                                project_id=project_id,
+                                package=package_name,
+                                version=version,
+                                file_path=file_path,
+                                dependency_type=dep_type,
+                                risk_level='CRITICAL',
+                                branch=branch,
+                                repository_url=project.get('web_url', '')
+                            )
+                            vulnerabilities.append(vuln)
+                            logger.warning(f"Found: {package_name}@{version} in {file_path} (branch: {branch})")
         
         return vulnerabilities
     

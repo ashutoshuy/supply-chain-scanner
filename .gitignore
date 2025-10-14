@@ -140,6 +140,7 @@ Thumbs.db
 
 # Project specific
 *.csv
+*.numbers
 *.json
 *.yaml
 *.yml
