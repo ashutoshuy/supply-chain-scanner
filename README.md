@@ -72,9 +72,11 @@ When a supply chain attack is announced:
 
 - ✅ **Multi-Platform Support**: GitHub, GitLab (Bitbucket coming soon)
 - ✅ **Multiple Output Formats**: CSV, JSON, YAML
-- ✅ **Configurable Package Lists**: External file support
-- ✅ **Comprehensive Scanning**: All package.json files in repositories
-- ✅ **Detailed Reporting**: Project, version, and location information  
+- ✅ **Vulnerability Database Integration**: GitHub, Snyk, MITRE CVE, OSV
+- ✅ **Comprehensive Attack Detection**: 5+ supply chain attack types
+- ✅ **All-Branch Scanning**: Scans every branch in repositories
+- ✅ **Configurable Sources**: Enable/disable vulnerability sources
+- ✅ **Detailed Reporting**: Attack type, branch, and location information  
 - ✅ **Risk Assessment**: Automatic risk level assignment
 - ✅ **API Integration**: RESTful APIs with proper authentication
 - ✅ **Error Handling**: Robust error handling and logging
@@ -101,15 +103,29 @@ cd supply-chain-scanner
 
 ### API Tokens
 
-#### GitHub Token
-1. Go to GitHub Settings → Developer Settings → Personal Access Tokens
-2. Generate new token with `repo` scope
-3. Use token: `ghp_xxxxxxxxxxxxxxxxxxxx`
+#### Command Line (Required)
+```bash
+# GitHub
+python scanner.py --provider github --token ghp_xxx
 
-#### GitLab Token
-1. Go to GitLab Profile Settings → Access Tokens  
-2. Create token with `read_repository` scope
-3. Use token: `glpat-xxxxxxxxxxxxxxxxxxxx`
+# GitLab  
+python scanner.py --provider gitlab --token glpat_xxx
+```
+
+#### Environment Variables (Optional tokens)
+```bash
+# Set optional tokens as environment variables
+export GITHUB_TOKEN="ghp_xxx"  # For GitHub advisories
+export SNYK_TOKEN="snyk_xxx"   # For Snyk database
+
+# Run with main token in command
+python scanner.py --provider github --token ghp_xxx --enable-all-sources
+```
+
+#### Token Generation
+- **GitHub**: Settings → Developer Settings → Personal Access Tokens (`repo` scope)
+- **GitLab**: Profile Settings → Access Tokens (`read_repository` scope)
+- **Snyk**: Account Settings → API Token
 
 ### Compromised Packages File
 
@@ -160,46 +176,87 @@ python scanner.py --provider gitlab --token TOKEN --url https://gitlab.company.c
 python scanner.py --provider github --token TOKEN --url https://github.company.com/api/v3
 ```
 
+### Vulnerability Database Integration
+
+#### Enable All Vulnerability Sources
+```bash
+python scanner.py --provider github --token TOKEN --enable-all-sources
+```
+
+#### Enable Specific Sources
+```bash
+# GitHub Advisory Database
+python scanner.py --provider github --token TOKEN --enable-github-advisories
+
+# Snyk Database (requires Snyk token)
+python scanner.py --provider gitlab --token TOKEN --enable-snyk --snyk-token snyk-xxx
+
+# MITRE CVE Database
+python scanner.py --provider github --token TOKEN --enable-mitre
+
+# OSV Database
+python scanner.py --provider gitlab --token TOKEN --enable-osv
+
+# Multiple sources
+python scanner.py --provider github --token TOKEN --enable-github-advisories --enable-osv
+```
+
 ### Advanced Usage
 
-#### Custom Package List
+#### Custom Package List + Vulnerability Databases
 ```bash
-python scanner.py --provider gitlab --token TOKEN --packages compromised_packages.txt
+python scanner.py --provider gitlab --token TOKEN --packages compromised_packages.txt --enable-github-advisories --enable-osv
 ```
 
 #### Different Output Formats
 ```bash
-# JSON output
-python scanner.py --provider github --token TOKEN --format json --output results.json
+# JSON output with all sources
+python scanner.py --provider github --token TOKEN --enable-all-sources --format json --output results.json
 
-# YAML output  
-python scanner.py --provider gitlab --token TOKEN --format yaml --output results.yaml
+# YAML output with specific sources
+python scanner.py --provider gitlab --token TOKEN --enable-github-advisories --enable-snyk --snyk-token TOKEN --format yaml --output results.yaml
 ```
 
 #### Verbose Logging
 ```bash
-python scanner.py --provider gitlab --token TOKEN --verbose
+python scanner.py --provider gitlab --token TOKEN --enable-all-sources --verbose
 ```
 
-### Complete Example
+### Complete Examples
+
+#### Comprehensive Enterprise Scan
 ```bash
-# Comprehensive scan with custom packages and JSON output
+# Full scan with all vulnerability sources and custom packages
 python scanner.py \
   --provider gitlab \
   --token glpat-xxxxxxxxxxxxxxxxxxxx \
   --url https://gitlab.company.com \
   --packages shai_hulud_packages.txt \
+  --enable-all-sources \
+  --snyk-token snyk-xxxxxxxxxxxxxxxxxxxx \
   --format json \
   --output security_scan_$(date +%Y%m%d).json \
   --verbose
+```
+
+#### Quick Security Check
+```bash
+# Fast scan with GitHub advisories and OSV
+python scanner.py \
+  --provider github \
+  --token ghp-xxxxxxxxxxxxxxxxxxxx \
+  --enable-github-advisories \
+  --enable-osv \
+  --format csv
 ```
 
 ## 📊 Output Examples
 
 ### CSV Output
 ```csv
-project,project_id,package,version,file_path,dependency_type,risk_level,repository_url,scan_timestamp
-frontend/dashboard,123,ngx-toastr,^19.0.0,package.json,dependencies,CRITICAL,https://gitlab.com/company/frontend/dashboard,2025-09-17T14:30:00
+project,project_id,package,version,file_path,dependency_type,risk_level,attack_type,branch,repository_url,scan_timestamp
+frontend/dashboard,123,ngx-toastr,^19.0.0,package.json,dependencies,CRITICAL,Known Malicious Package,main,https://gitlab.com/company/frontend/dashboard,2025-09-17T14:30:00
+api/service,456,raect,^18.0.0,package.json,dependencies,HIGH,Typosquatting Attack,develop,https://gitlab.com/company/api/service,2025-09-17T14:30:00
 ```
 
 ### JSON Output
@@ -219,6 +276,8 @@ frontend/dashboard,123,ngx-toastr,^19.0.0,package.json,dependencies,CRITICAL,htt
       "file_path": "package.json",
       "dependency_type": "dependencies",
       "risk_level": "CRITICAL",
+      "attack_type": "Known Malicious Package",
+      "branch": "main",
       "repository_url": "https://gitlab.com/company/frontend/dashboard",
       "scan_timestamp": "2025-09-17T14:30:00.123456"
     }
@@ -250,11 +309,18 @@ security_scan:
 
 ## 🔍 Understanding Results
 
+### Attack Types Detected
+- **Known Malicious Package**: Packages from vulnerability databases (CRITICAL)
+- **Typosquatting Attack**: Similar names to popular packages (HIGH)
+- **Dependency Confusion**: Suspicious version patterns or internal packages (HIGH)
+- **Malicious Script**: Suspicious install/postinstall scripts (CRITICAL)
+- **Suspicious Package Characteristics**: Multiple red flags in package metadata (MEDIUM)
+
 ### Risk Levels
-- **CRITICAL**: Package in compromised list, immediate action required
-- **HIGH**: Suspicious version patterns or timing
-- **MEDIUM**: Related packages or dependencies
-- **LOW**: Historical vulnerabilities, monitoring recommended
+- **CRITICAL**: Immediate action required - known malicious or active threats
+- **HIGH**: High probability of malicious intent - investigate immediately
+- **MEDIUM**: Suspicious characteristics - monitor and investigate
+- **LOW**: Historical vulnerabilities - monitoring recommended
 
 ### Recommended Actions
 1. **CRITICAL findings**:
@@ -345,6 +411,19 @@ curl -s https://api.github.com/advisories | jq '.[] | select(.ecosystem=="npm") 
 
 ### Common Issues
 
+#### Provider/Token Mismatch
+```bash
+Error: 404 Client Error: Not Found
+```
+**Solution**: Match provider with correct token type
+```bash
+# GitLab tokens (glpat-) with GitLab provider
+python scanner.py --provider gitlab --token glpat-xxx --url https://gitlab.company.com
+
+# GitHub tokens (ghp_) with GitHub provider
+python scanner.py --provider github --token ghp-xxx
+```
+
 #### Authentication Errors
 ```bash
 Error: 401 Unauthorized
@@ -355,7 +434,7 @@ Error: 401 Unauthorized
 curl -H "PRIVATE-TOKEN: $TOKEN" "https://gitlab.com/api/v4/user"
 
 # Test GitHub token  
-curl -H "Authorization: token $TOKEN" "https://api.github.com/user"
+curl -H "Authorization: Bearer $TOKEN" "https://api.github.com/user"
 ```
 
 #### Rate Limiting

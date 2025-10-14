@@ -14,12 +14,13 @@ import yaml
 import argparse
 import sys
 import os
-from datetime import datetime
-from typing import List, Dict, Optional, Union, Any
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Union, Any, Set
 from pathlib import Path
 import urllib.parse
 import logging
 from dataclasses import dataclass, asdict
+import time
 
 __version__ = "1.0.0"
 __author__ = "Security Community"
@@ -28,6 +29,166 @@ __license__ = "MIT"
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+class VulnerabilityDatabase:
+    """Vulnerability database integration with multiple sources"""
+    
+    def __init__(self, github_token: Optional[str] = None, snyk_token: Optional[str] = None):
+        self.github_token = github_token
+        self.snyk_token = snyk_token
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': 'supply-chain-scanner/1.0.0'})
+    
+    def get_npm_advisories(self) -> Set[str]:
+        """Get vulnerable packages from NPM Security Advisory Database"""
+        logger.warning("NPM Advisory API is not publicly available, skipping NPM advisories")
+        return set()
+    
+    def get_github_advisories(self) -> Set[str]:
+        """Get vulnerable packages from GitHub Advisory Database"""
+        if not self.github_token:
+            logger.warning("GitHub token not provided, skipping GitHub advisories")
+            return set()
+        
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.github_token}',
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+            url = "https://api.github.com/advisories"
+            params = {'ecosystem': 'npm', 'per_page': 100}
+            
+            packages = set()
+            page = 1
+            
+            while page <= 3:  # Limit to 3 pages
+                params['page'] = page
+                response = self.session.get(url, headers=headers, params=params, timeout=30)
+                response.raise_for_status()
+                
+                advisories = response.json()
+                if not advisories:
+                    break
+                
+                for advisory in advisories:
+                    for vuln in advisory.get('vulnerabilities', []):
+                        if vuln.get('package', {}).get('ecosystem') == 'npm':
+                            packages.add(vuln['package']['name'])
+                
+                page += 1
+                time.sleep(1)  # Rate limiting
+            
+            logger.info(f"Loaded {len(packages)} packages from GitHub Advisory Database")
+            return packages
+        except Exception as e:
+            logger.error(f"Failed to fetch GitHub advisories: {e}")
+            return set()
+    
+    def get_snyk_advisories(self) -> Set[str]:
+        """Get vulnerable packages from Snyk Database"""
+        if not self.snyk_token:
+            logger.warning("Snyk token not provided, skipping Snyk advisories")
+            return set()
+        
+        try:
+            headers = {'Authorization': f'token {self.snyk_token}'}
+            url = "https://api.snyk.io/v1/vuln/npm"
+            
+            response = self.session.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            packages = set()
+            
+            for vuln in data.get('vulnerabilities', []):
+                if 'package' in vuln:
+                    packages.add(vuln['package'])
+            
+            logger.info(f"Loaded {len(packages)} packages from Snyk Database")
+            return packages
+        except Exception as e:
+            logger.error(f"Failed to fetch Snyk advisories: {e}")
+            return set()
+    
+    def get_mitre_cve_packages(self) -> Set[str]:
+        """Get NPM packages from MITRE CVE Database"""
+        try:
+            # Using NVD API for CVE data
+            url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
+            params = {'keywordSearch': 'npm package', 'resultsPerPage': 100}
+            
+            response = self.session.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            packages = set()
+            
+            for cve in data.get('vulnerabilities', []):
+                description = cve.get('cve', {}).get('description', {}).get('description_data', [{}])[0].get('value', '')
+                # Simple pattern matching for NPM package names
+                import re
+                npm_packages = re.findall(r'npm\s+package\s+([\w@/-]+)', description, re.IGNORECASE)
+                packages.update(npm_packages)
+            
+            logger.info(f"Loaded {len(packages)} packages from MITRE CVE Database")
+            return packages
+        except Exception as e:
+            logger.error(f"Failed to fetch MITRE CVE data: {e}")
+            return set()
+    
+    def get_osv_advisories(self) -> Set[str]:
+        """Get vulnerable packages from OSV (Open Source Vulnerabilities) Database"""
+        try:
+            # Query for popular npm packages to get vulnerabilities
+            popular_packages = ['lodash', 'express', 'react', 'axios', 'moment']
+            packages = set()
+            
+            for pkg in popular_packages:
+                url = "https://api.osv.dev/v1/query"
+                payload = {
+                    "package": {
+                        "ecosystem": "npm",
+                        "name": pkg
+                    }
+                }
+                
+                response = self.session.post(url, json=payload, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    for vuln in data.get('vulns', []):
+                        for affected in vuln.get('affected', []):
+                            if affected.get('package', {}).get('ecosystem') == 'npm':
+                                packages.add(affected['package']['name'])
+                
+                time.sleep(0.1)  # Rate limiting
+            
+            logger.info(f"Loaded {len(packages)} packages from OSV Database")
+            return packages
+        except Exception as e:
+            logger.error(f"Failed to fetch OSV advisories: {e}")
+            return set()
+    
+    def get_all_vulnerable_packages(self, sources: Dict[str, bool]) -> Set[str]:
+        """Get vulnerable packages from enabled sources"""
+        all_packages = set()
+        
+
+        
+        if sources.get('github', False):
+            all_packages.update(self.get_github_advisories())
+        
+        if sources.get('snyk', False):
+            all_packages.update(self.get_snyk_advisories())
+        
+        if sources.get('mitre', False):
+            all_packages.update(self.get_mitre_cve_packages())
+        
+        if sources.get('osv', False):
+            all_packages.update(self.get_osv_advisories())
+        
+        logger.info(f"Total unique vulnerable packages: {len(all_packages)}")
+        return all_packages
 
 @dataclass
 class Vulnerability:
@@ -39,6 +200,7 @@ class Vulnerability:
     file_path: str
     dependency_type: str
     risk_level: str
+    attack_type: str = ""
     branch: str = ""
     repository_url: str = ""
     scan_timestamp: str = ""
@@ -46,6 +208,89 @@ class Vulnerability:
     def __post_init__(self):
         if not self.scan_timestamp:
             self.scan_timestamp = datetime.now().isoformat()
+
+class SupplyChainAttackDetector:
+    """Detect various types of supply chain attacks"""
+    
+    def __init__(self, compromised_packages: Set[str]):
+        self.compromised_packages = compromised_packages
+        self.popular_packages = {
+            'react', 'lodash', 'express', 'axios', 'moment', 'webpack', 'babel',
+            'eslint', 'typescript', 'jquery', 'bootstrap', 'angular', 'vue'
+        }
+    
+    def detect_typosquatting(self, package_name: str) -> bool:
+        """Detect potential typosquatting attacks"""
+        import difflib
+        for popular in self.popular_packages:
+            if package_name != popular:
+                similarity = difflib.SequenceMatcher(None, package_name.lower(), popular.lower()).ratio()
+                if 0.7 <= similarity < 1.0:
+                    return True
+        return False
+    
+    def detect_dependency_confusion(self, package_name: str, version: str) -> bool:
+        """Detect dependency confusion attacks"""
+        import re
+        suspicious_versions = [r'^999\.', r'^\d{10,}', r'\.(999|9999)\.']        
+        for pattern in suspicious_versions:
+            if re.match(pattern, version.strip('^~>=<')):
+                return True        
+        internal_patterns = ['@company/', '@internal/', '@private/']
+        return any(package_name.startswith(pattern) for pattern in internal_patterns)
+    
+    def detect_malicious_scripts(self, package_json: Dict) -> List[str]:
+        """Detect malicious install scripts"""
+        malicious_scripts = []
+        scripts = package_json.get('scripts', {})
+        suspicious_domains = ['webhook.site', 'requestbin.com', 'ngrok.io']
+        crypto_miners = ['cryptonight', 'monero', 'bitcoin', 'mining']
+        
+        for script_type in ['postinstall', 'preinstall', 'install']:
+            if script_type in scripts:
+                script_content = scripts[script_type].lower()
+                if any(domain in script_content for domain in suspicious_domains):
+                    malicious_scripts.append(f"{script_type}: external data exfiltration")
+                elif any(crypto in script_content for crypto in crypto_miners):
+                    malicious_scripts.append(f"{script_type}: cryptocurrency mining")
+                elif 'curl' in script_content or 'wget' in script_content:
+                    malicious_scripts.append(f"{script_type}: suspicious network activity")
+                elif 'rm -rf' in script_content or 'del /f' in script_content:
+                    malicious_scripts.append(f"{script_type}: destructive commands")
+        
+        return malicious_scripts
+    
+    def detect_backdoor_packages(self, package_name: str, package_json: Dict) -> bool:
+        """Detect potential backdoor packages"""
+        suspicious_indicators = [
+            len(package_json.get('description', '')) < 10,
+            not package_json.get('repository'),
+            not package_json.get('homepage'),
+            package_json.get('version', '').startswith('0.0.'),
+        ]
+        return sum(suspicious_indicators) >= 3
+    
+    def detect_supply_chain_attacks(self, package_name: str, version: str, package_json: Dict) -> List[Dict[str, str]]:
+        """Detect all types of supply chain attacks"""
+        attacks = []
+        
+        if package_name in self.compromised_packages:
+            attacks.append({'type': 'Known Malicious Package', 'severity': 'CRITICAL'})
+        
+        if self.detect_typosquatting(package_name):
+            attacks.append({'type': 'Typosquatting Attack', 'severity': 'HIGH'})
+        
+        if self.detect_dependency_confusion(package_name, version):
+            attacks.append({'type': 'Dependency Confusion', 'severity': 'HIGH'})
+        
+        malicious_scripts = self.detect_malicious_scripts(package_json)
+        for script in malicious_scripts:
+            attacks.append({'type': f'Malicious Script: {script}', 'severity': 'CRITICAL'})
+        
+        if self.detect_backdoor_packages(package_name, package_json):
+            attacks.append({'type': 'Suspicious Package Characteristics', 'severity': 'MEDIUM'})
+        
+        return attacks
 
 class GitProvider:
     """Base class for Git providers"""
@@ -166,8 +411,9 @@ class GitHubProvider(GitProvider):
     
     def _setup_auth(self) -> None:
         self.session.headers.update({
-            'Authorization': f'token {self.token}',
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': f'Bearer {self.token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28'
         })
     
     def get_projects(self) -> List[Dict]:
@@ -278,6 +524,7 @@ class SupplyChainScanner:
     def __init__(self, provider: GitProvider, compromised_packages: List[str]):
         self.provider = provider
         self.compromised_packages = set(compromised_packages)
+        self.attack_detector = SupplyChainAttackDetector(self.compromised_packages)
         
     @classmethod
     def create_provider(cls, provider_type: str, base_url: str, token: str) -> GitProvider:
@@ -293,20 +540,37 @@ class SupplyChainScanner:
         return providers[provider_type.lower()](base_url, token)
     
     @classmethod
-    def load_compromised_packages(cls, package_file: Optional[str] = None) -> List[str]:
-        """Load compromised packages from file or use defaults"""
+    def load_compromised_packages(cls, package_file: Optional[str] = None, 
+                                vuln_sources: Optional[Dict[str, bool]] = None,
+                                github_token: Optional[str] = None,
+                                snyk_token: Optional[str] = None) -> List[str]:
+        """Load compromised packages from file, vulnerability databases, or use defaults"""
+        packages = set()
+        
+        # Load from file if provided
         if package_file and Path(package_file).exists():
             logger.info(f"Loading compromised packages from {package_file}")
             with open(package_file, 'r') as f:
                 if package_file.endswith('.json'):
                     data = json.load(f)
-                    packages = data.get('packages', data) if isinstance(data, dict) else data
-                    return list(packages) if packages else []
+                    file_packages = data.get('packages', data) if isinstance(data, dict) else data
+                    packages.update(file_packages or [])
                 else:
-                    return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                    packages.update([line.strip() for line in f if line.strip() and not line.startswith('#')])
         
-        logger.info("Using default Shai-Hulud compromised packages list")
-        return cls._get_default_packages()
+        # Load from vulnerability databases if enabled
+        if vuln_sources and any(vuln_sources.values()):
+            logger.info("Loading packages from vulnerability databases...")
+            vuln_db = VulnerabilityDatabase(github_token, snyk_token)
+            db_packages = vuln_db.get_all_vulnerable_packages(vuln_sources)
+            packages.update(db_packages)
+        
+        # Use defaults if no other sources
+        if not packages:
+            logger.info("Using default Shai-Hulud compromised packages list")
+            packages.update(cls._get_default_packages())
+        
+        return list(packages)
     
     @staticmethod
     def _get_default_packages() -> List[str]:
@@ -369,7 +633,9 @@ class SupplyChainScanner:
                     deps = package_json.get(dep_type, {})
                     
                     for package_name, version in deps.items():
-                        if package_name in self.compromised_packages:
+                        attacks = self.attack_detector.detect_supply_chain_attacks(package_name, version, package_json)
+                        
+                        for attack in attacks:
                             vuln = Vulnerability(
                                 project=project_name,
                                 project_id=project_id,
@@ -377,12 +643,13 @@ class SupplyChainScanner:
                                 version=version,
                                 file_path=file_path,
                                 dependency_type=dep_type,
-                                risk_level='CRITICAL',
+                                risk_level=attack['severity'],
+                                attack_type=attack['type'],
                                 branch=branch,
                                 repository_url=project.get('web_url', '')
                             )
                             vulnerabilities.append(vuln)
-                            logger.warning(f"Found: {package_name}@{version} in {file_path} (branch: {branch})")
+                            logger.warning(f"Found {attack['type']}: {package_name}@{version} in {file_path} (branch: {branch})")
         
         return vulnerabilities
     
@@ -453,11 +720,14 @@ Examples:
   # Scan GitLab projects
   python scanner.py --provider gitlab --token glpat-xxx --url https://gitlab.company.com
   
-  # Scan GitHub repositories  
-  python scanner.py --provider github --token ghp-xxx --url https://api.github.com
+  # Scan GitHub repositories with GitHub advisories
+  python scanner.py --provider github --token ghp-xxx --enable-github-advisories
   
-  # Use custom package list and JSON output
-  python scanner.py --provider gitlab --token xxx --packages packages.txt --format json
+  # Use specific vulnerability sources
+  python scanner.py --provider gitlab --token xxx --enable-github-advisories --enable-osv
+  
+  # Use custom package list and Snyk database
+  python scanner.py --provider gitlab --token xxx --packages packages.txt --enable-snyk --snyk-token snyk-xxx
         """
     )
     
@@ -469,10 +739,29 @@ Examples:
     parser.add_argument('--output', help='Output file name')
     parser.add_argument('--format', choices=['csv', 'json', 'yaml'], default='csv',
                        help='Output format (default: csv)')
+    
+    # Vulnerability database sources
+    parser.add_argument('--enable-github-advisories', action='store_true', help='Enable GitHub Advisory Database')
+    parser.add_argument('--enable-snyk', action='store_true', help='Enable Snyk vulnerability database')
+    parser.add_argument('--enable-mitre', action='store_true', help='Enable MITRE CVE database')
+    parser.add_argument('--enable-osv', action='store_true', help='Enable OSV (Open Source Vulnerabilities) database')
+    parser.add_argument('--enable-all-sources', action='store_true', help='Enable all vulnerability sources')
+    
+    # API tokens for vulnerability databases
+    parser.add_argument('--github-token', help='GitHub token for advisory access (or set GITHUB_TOKEN env var)')
+    parser.add_argument('--snyk-token', help='Snyk API token (or set SNYK_TOKEN env var)')
+    
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     
     args = parser.parse_args()
+    
+    # Use environment variables as fallback for optional tokens
+    if not args.github_token:
+        args.github_token = os.getenv('GITHUB_TOKEN')
+    
+    if not args.snyk_token:
+        args.snyk_token = os.getenv('SNYK_TOKEN')
     
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -487,8 +776,21 @@ Examples:
         args.output = f"supply_chain_scan_{timestamp}.{args.format}"
     
     try:
+        # Configure vulnerability sources
+        vuln_sources = {
+            'github': args.enable_github_advisories or args.enable_all_sources,
+            'snyk': args.enable_snyk or args.enable_all_sources,
+            'mitre': args.enable_mitre or args.enable_all_sources,
+            'osv': args.enable_osv or args.enable_all_sources
+        }
+        
+        # Use GitHub token for advisories if not separately provided  
+        github_advisory_token = args.github_token or (args.token if args.provider == 'github' else None)
+        
         # Load compromised packages
-        compromised_packages = SupplyChainScanner.load_compromised_packages(args.packages)
+        compromised_packages = SupplyChainScanner.load_compromised_packages(
+            args.packages, vuln_sources, github_advisory_token, args.snyk_token
+        )
         logger.info(f"Loaded {len(compromised_packages)} compromised packages")
         
         # Create provider and scanner
@@ -509,7 +811,16 @@ Examples:
         print(f"Report saved to: {args.output}")
         
         if vulnerabilities:
-            print(f"\n⚠️  WARNING: {len(vulnerabilities)} compromised packages found!")
+            print(f"\n⚠️  WARNING: {len(vulnerabilities)} supply chain threats found!")
+            
+            # Show summary by attack type
+            attack_counts: Dict[str, int] = {}
+            for vuln in vulnerabilities:
+                attack_counts[vuln.attack_type] = attack_counts.get(vuln.attack_type, 0) + 1
+            
+            print(f"\nAttack types detected:")
+            for attack_type, count in sorted(attack_counts.items(), key=lambda x: x[1], reverse=True):
+                print(f"  - {attack_type}: {count} instances")
             
             # Show summary by project
             project_counts: Dict[str, int] = {}
@@ -519,9 +830,9 @@ Examples:
             print(f"\nAffected projects:")
             for project, count in sorted(project_counts.items(), 
                                        key=lambda x: x[1], reverse=True)[:10]:
-                print(f"  - {project}: {count} vulnerable packages")
+                print(f"  - {project}: {count} threats")
         else:
-            print("✅ No compromised packages found in your repositories.")
+            print("✅ No supply chain threats detected in your repositories.")
         
         sys.exit(1 if vulnerabilities else 0)
         
