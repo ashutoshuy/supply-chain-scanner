@@ -411,6 +411,19 @@ curl -s https://api.github.com/advisories | jq '.[] | select(.ecosystem=="npm") 
 
 ### Common Issues
 
+#### Provider/Token Mismatch
+```bash
+Error: 404 Client Error: Not Found
+```
+**Solution**: Match provider with correct token type
+```bash
+# GitLab tokens (glpat-) with GitLab provider
+python scanner.py --provider gitlab --token glpat-xxx --url https://gitlab.company.com
+
+# GitHub tokens (ghp_) with GitHub provider
+python scanner.py --provider github --token ghp-xxx
+```
+
 #### Authentication Errors
 ```bash
 Error: 401 Unauthorized
@@ -421,7 +434,7 @@ Error: 401 Unauthorized
 curl -H "PRIVATE-TOKEN: $TOKEN" "https://gitlab.com/api/v4/user"
 
 # Test GitHub token  
-curl -H "Authorization: token $TOKEN" "https://api.github.com/user"
+curl -H "Authorization: Bearer $TOKEN" "https://api.github.com/user"
 ```
 
 #### Rate Limiting
